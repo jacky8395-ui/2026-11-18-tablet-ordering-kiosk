@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點餐平板｜味藏天國風</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --wood: #2b1a12;
+            --wood-line: #33211a;
+            --washi: #ede4d1;       /* 和紙 */
+            --paper: #f8f3e6;       /* 障子紙 */
+            --ai: #1f2a44;          /* 藍染（門簾） */
+            --enji: #9e2b25;        /* 臙脂（印章／選取） */
+            --sumi: #2b1a12;
+            --gold: #f3d9a4;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        body {
+            background: repeating-linear-gradient(90deg, var(--wood) 0, var(--wood) 46px, var(--wood-line) 46px, var(--wood-line) 48px);
+            color: var(--sumi);
+            font-family: "Noto Serif TC", "Noto Sans TC", serif;
+        }
+
+        button,
+        select {
+            font-family: inherit;
+        }
+
+        /* 外框：和紙面板 */
+        .frame {
+            height: calc(100dvh - 28px);
+            max-width: 1200px;
+            margin: 14px auto;
+            background: var(--washi);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 門簾：分類按鈕 */
+        .rod {
+            flex: none;
+            height: 10px;
+            margin: 0 10px;
+            background: #5a3b28;
+        }
+
+        .noren {
+            flex: none;
+            height: clamp(84px, 14vh, 112px);
+            display: flex;
+            gap: 10px;
+            padding: 0 18px;
+        }
+
+        .cat {
+            flex: 1;
+            min-width: 0;
+            border: 0;
+            border-radius: 0 0 6px 6px;
+            background: var(--ai);
+            color: #fff;
+            font-size: clamp(16px, 2.4vw, 26px);
+            font-weight: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .cat::before {
+            content: "";
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+        }
+
+        .cat:hover {
+            background: #2d3c60;
+        }
+
+        .cat[aria-selected="true"] {
+            background: var(--enji);
+        }
+
+        /* 餐點卡片 */
+        .content {
+            flex: 1;
+            min-height: 0;
+            padding: 20px 28px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .items {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            gap: 24px;
+        }
+
+        .item {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+            border: 2px solid var(--ai);
+            background: var(--paper);
+            color: var(--sumi);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .item[aria-pressed="true"] {
+            box-shadow: 0 0 0 4px var(--enji);
+        }
+
+        .photo {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            border: 1px solid var(--sumi);
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .photo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo img.contain {
+            object-fit: contain;
+            padding: 6px;
+        }
+
+        /* 印章 */
+        .stamp {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            width: 58px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--enji);
+            color: #fff;
+            border-radius: 4px;
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .meta {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 4px;
+        }
+
+        .name {
+            font-size: clamp(20px, 3vw, 30px);
+            font-weight: 900;
+        }
+
+        .price {
+            font-size: clamp(18px, 2.6vw, 26px);
+            font-weight: 900;
+            color: var(--enji);
+            white-space: nowrap;
+        }
+
+        /* 數量 / 加入 */
+        .actions {
+            flex: none;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .qty {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: clamp(16px, 2.2vw, 22px);
+            font-weight: 700;
+            color: var(--ai);
+        }
+
+        .select-wrap {
+            position: relative;
+            width: 230px;
+            height: 72px;
+        }
+
+        .select-wrap svg {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            margin-top: -5px;
+            pointer-events: none;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 100%;
+            padding: 0 44px 0 18px;
+            border: 2px solid var(--ai);
+            border-radius: 4px;
+            background: var(--paper);
+            color: var(--sumi);
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .add {
+            flex: 1;
+            height: 72px;
+            border: 0;
+            border-radius: 4px;
+            background: var(--enji);
+            color: #fff;
+            font-size: clamp(22px, 3vw, 32px);
+            font-weight: 900;
+            letter-spacing: .5em;
+            text-indent: .5em;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .add:hover {
+            background: #85231e;
+        }
+
+        .add.done {
+            background: var(--ai);
+        }
+
+        /* 金額 / 點餐紀錄 / 清除 */
+        .foot {
+            flex: none;
+            min-height: 104px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            padding: 10px 28px;
+            background: var(--ai);
+            color: var(--washi);
+        }
+
+        .total {
+            flex: none;
+        }
+
+        .total .label {
+            font-size: 16px;
+            color: #d9d2c0;
+        }
+
+        .total .amount {
+            font-size: clamp(30px, 4.4vw, 44px);
+            font-weight: 900;
+            line-height: 1.1;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .log {
+            flex: 1;
+            min-width: 0;
+            max-height: 84px;
+            overflow-y: auto;
+        }
+
+        .log .label {
+            font-size: 15px;
+            color: #d9d2c0;
+        }
+
+        .log .text {
+            font-size: clamp(16px, 2.2vw, 21px);
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .log .text.empty {
+            color: #b7b3a8;
+            font-weight: 500;
+        }
+
+        .clear {
+            flex: none;
+            height: 56px;
+            padding: 0 24px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--washi);
+            box-shadow: inset 0 0 0 2px var(--washi);
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+
+        .clear:hover:not(:disabled) {
+            background: var(--washi);
+            color: var(--ai);
+        }
+
+        .clear:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        button:focus-visible,
+        select:focus-visible {
+            outline: 3px solid #f2b705;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 760px) {
+            .items {
+                gap: 12px;
+            }
+
+            .content {
+                padding: 14px;
+            }
+
+            .select-wrap {
+                width: 160px;
+            }
+
+            .foot {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="frame">
+        <div class="rod"></div>
+        <div class="noren" id="cats" role="tablist"></div>
+
+        <div class="content">
+            <div class="items" id="items"></div>
+
+            <div class="actions">
+                <label class="qty">
+                    數量
+                    <span class="select-wrap">
+                        <select id="qty" aria-label="數量"></select>
+                        <svg aria-hidden="true" width="16" height="10" viewBox="0 0 16 10">
+                            <path d="M1 1l7 7 7-7" fill="none" stroke="#1f2a44" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </label>
+                <button class="add" id="add" type="button">加入</button>
+            </div>
+        </div>
+
+        <div class="foot">
+            <div class="total">
+                <div class="label">目前金額總計　<span id="count">尚未點餐</span></div>
+                <div class="amount" id="total">NT$ 0</div>
+            </div>
+            <div class="log">
+                <div class="label">點餐紀錄</div>
+                <div class="text empty" id="log">尚未點餐</div>
+            </div>
+            <button class="clear" id="clear" type="button" disabled>清除購物車</button>
+        </div>
+    </div>
+
+    <script>
+        // 菜單：img 為同資料夾的圖片；fit:"contain" 讓瓶罐完整顯示；tag 為印章文字（可省略）
+        const MENU = [
+            { cat: "肉盤", items: [
+                { name: "特選和牛盤", price: 680, emoji: "🥩", img: "1.jpg", tag: "和牛" },
+                { name: "綜合燒肉盤", price: 480, emoji: "🍖", img: "2.jpg" } ] },
+            { cat: "肉片", items: [
+                { name: "霜降牛肉片", price: 250, emoji: "🐂", img: "3.jpg", tag: "霜降" },
+                { name: "豬梅花肉片", price: 200, emoji: "🐖", img: "4.jpg" } ] },
+            { cat: "蔬菜", items: [
+                { name: "蔬菜", price: 100, emoji: "🥬", img: "5.JPG" },
+                { name: "節瓜", price: 40, emoji: "🥒", img: "6.jpg" } ] },
+            { cat: "小菜", items: [
+                { name: "涼拌小黃瓜", price: 40, emoji: "🥗", img: "7.jpg" },
+                { name: "白飯", price: 30, emoji: "🍚", img: "8.jpg" } ] },
+            { cat: "飲料", items: [
+                { name: "綠茶", price: 40, emoji: "🍵", img: "9.jpg" },
+                { name: "可樂", price: 50, emoji: "🥤", img: "10.jpg", fit: "contain" } ] },
+            { cat: "酒精飲料", items: [
+                { name: "生啤酒", price: 120, emoji: "🍺", img: "11.jpg" },
+                { name: "清酒", price: 180, emoji: "🍶", img: "12.png", fit: "contain" } ] }
+        ];
+
+        const catsEl = document.getElementById("cats");
+        const itemsEl = document.getElementById("items");
+        const qty = document.getElementById("qty");
+        const addBtn = document.getElementById("add");
+        const totalEl = document.getElementById("total");
+        const countEl = document.getElementById("count");
+        const logEl = document.getElementById("log");
+        const clearBtn = document.getElementById("clear");
+
+        let catIndex = 0;
+        let selected = 0;
+        const cart = new Map(); // 品名 -> { price, qty }
+
+        // 數量 1–10
+        for (let i = 1; i <= 10; i++) qty.add(new Option(i + " 份", i));
+
+        // 分類按鈕（門簾）
+        MENU.forEach((m, i) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "cat";
+            btn.setAttribute("role", "tab");
+            btn.textContent = m.cat;
+            btn.addEventListener("click", () => { catIndex = i; selected = 0; qty.value = 1; render(); });
+            catsEl.appendChild(btn);
+        });
+
+        function render() {
+            catsEl.querySelectorAll(".cat").forEach((b, i) => b.setAttribute("aria-selected", i === catIndex));
+
+            itemsEl.innerHTML = MENU[catIndex].items.map((it, i) => {
+                const visual = it.img
+                    ? `<img src="${it.img}" alt="${it.name}"${it.fit ? ` class="${it.fit}"` : ""}>`
+                    : `<span style="font-size:90px;display:grid;place-items:center;height:100%">${it.emoji}</span>`;
+                const stamp = it.tag ? `<span class="stamp">${it.tag}</span>` : "";
+                return `
+                    <button type="button" class="item" aria-pressed="${i === selected}" data-i="${i}">
+                        <span class="photo">${visual}${stamp}</span>
+                        <span class="meta">
+                            <span class="name">${it.name}</span>
+                            <span class="price">NT$ ${it.price}</span>
+                        </span>
+                    </button>`;
+            }).join("");
+        }
+
+        itemsEl.addEventListener("click", e => {
+            const b = e.target.closest(".item");
+            if (!b) return;
+            selected = Number(b.dataset.i);
+            render();
+        });
+
+        function renderCart() {
+            let total = 0, count = 0;
+            const parts = [];
+            cart.forEach((row, name) => {
+                total += row.price * row.qty;
+                count += row.qty;
+                parts.push(name + "X" + row.qty);
+            });
+            totalEl.textContent = "NT$ " + total.toLocaleString("en-US");
+            countEl.textContent = count ? "共 " + count + " 份" : "尚未點餐";
+            logEl.textContent = parts.length ? parts.join("、") : "尚未點餐";
+            logEl.classList.toggle("empty", !parts.length);
+            clearBtn.disabled = !parts.length;
+        }
+
+        addBtn.addEventListener("click", () => {
+            const item = MENU[catIndex].items[selected];
+            const row = cart.get(item.name) || { price: item.price, qty: 0 };
+            row.qty += Number(qty.value);
+            cart.set(item.name, row);
+            renderCart();
+
+            addBtn.textContent = "已加入";
+            addBtn.classList.add("done");
+            setTimeout(() => { addBtn.textContent = "加入"; addBtn.classList.remove("done"); }, 900);
+            qty.value = 1;
+        });
+
+        clearBtn.addEventListener("click", () => { cart.clear(); renderCart(); });
+
+        render();
+        renderCart();
+    </script>
+</body>
+
+</html>
